@@ -22,10 +22,38 @@ The intended build path is GitHub Actions:
 5. Download the `pi-connect-debug-apk` artifact.
 6. Install `app-debug.apk` on an Android phone.
 
-Local builds are optional and require Java 17, Android SDK, and Gradle:
+Local builds are optional and require Java 17 and Android SDK platform 35/build-tools 35.0.0.
+This repository includes a Gradle wrapper pinned to the same Gradle version used by CI:
 
 ```bash
-gradle --no-daemon assembleDebug
+./gradlew --no-daemon assembleDebug
+```
+
+## ADB Development
+
+Local ADB testing requires an Android phone with Developer options and USB debugging enabled.
+After plugging in the phone, accept the RSA authorization prompt and check the connection:
+
+```bash
+scripts/adb-device.sh
+```
+
+Build, install, and launch the debug app:
+
+```bash
+scripts/adb-run-debug.sh
+```
+
+View app logs for the running debug build:
+
+```bash
+scripts/adb-logcat.sh
+```
+
+Capture the current device screen to `captures/`:
+
+```bash
+scripts/adb-screenshot.sh
 ```
 
 ## Raspberry Pi Workflow
