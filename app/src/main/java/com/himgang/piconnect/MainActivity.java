@@ -162,26 +162,16 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
 
-        HorizontalScrollView toolbarContainer = new HorizontalScrollView(this);
-        toolbarContainer.setHorizontalScrollBarEnabled(false);
-        toolbarContainer.setFillViewport(false);
-        toolbarContainer.setBackgroundResource(R.drawable.panel_bg);
-        toolbarContainer.addView(buildToolbar());
-
         FrameLayout.LayoutParams toolbarParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
         );
         toolbarParams.setMargins(dp(6), dp(6), dp(6), dp(6));
-        root.addView(toolbarContainer, toolbarParams);
+        root.addView(wrapScrollableBar(buildToolbar(), "Main controls. Swipe left or right for more actions."),
+                toolbarParams);
 
-        keyBarContainer = new HorizontalScrollView(this);
-        keyBarContainer.setHorizontalScrollBarEnabled(false);
-        keyBarContainer.setFillViewport(false);
-        keyBarContainer.setVisibility(View.VISIBLE);
-        keyBarContainer.setBackgroundResource(R.drawable.panel_bg);
-        keyBarContainer.addView(buildKeyBar());
+        keyBarContainer = makeScrollableBar(buildKeyBar(), "Remote key controls. Swipe left or right for more keys.");
 
         FrameLayout.LayoutParams keyParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -189,7 +179,7 @@ public class MainActivity extends Activity {
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
         );
         keyParams.setMargins(dp(6), dp(6), dp(6), dp(48));
-        root.addView(keyBarContainer, keyParams);
+        root.addView(wrapScrollableBar(keyBarContainer), keyParams);
 
         return root;
     }
@@ -414,6 +404,83 @@ public class MainActivity extends Activity {
         keyBar.addView(pageDown, buttonParams());
 
         return keyBar;
+    }
+
+    private FrameLayout wrapScrollableBar(LinearLayout content, String description) {
+        return wrapScrollableBar(makeScrollableBar(content, description));
+    }
+
+    private HorizontalScrollView makeScrollableBar(LinearLayout content, String description) {
+        HorizontalScrollView scrollView = new HorizontalScrollView(this);
+        scrollView.setHorizontalScrollBarEnabled(true);
+        scrollView.setScrollbarFadingEnabled(false);
+        scrollView.setHorizontalFadingEdgeEnabled(true);
+        scrollView.setFadingEdgeLength(dp(19));
+        scrollView.setFillViewport(false);
+        scrollView.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
+        scrollView.setContentDescription(description);
+        scrollView.addView(content);
+        return scrollView;
+    }
+
+    private FrameLayout wrapScrollableBar(HorizontalScrollView scrollView) {
+        FrameLayout wrapper = new FrameLayout(this);
+        wrapper.setBackgroundResource(R.drawable.panel_bg);
+
+        wrapper.addView(scrollView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        TextView leftHint = makeScrollHint("‹", "More controls to the left");
+        TextView rightHint = makeScrollHint("›", "More controls to the right");
+
+        FrameLayout.LayoutParams leftParams = new FrameLayout.LayoutParams(
+                dp(14),
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.START | Gravity.CENTER_VERTICAL
+        );
+        FrameLayout.LayoutParams rightParams = new FrameLayout.LayoutParams(
+                dp(14),
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.END | Gravity.CENTER_VERTICAL
+        );
+        wrapper.addView(leftHint, leftParams);
+        wrapper.addView(rightHint, rightParams);
+
+        Runnable updateHints = () -> updateScrollHints(scrollView, leftHint, rightHint);
+        scrollView.setOnScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) -> updateHints.run());
+        scrollView.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                scrollView.post(updateHints));
+        scrollView.post(updateHints);
+
+        return wrapper;
+    }
+
+    private TextView makeScrollHint(String label, String description) {
+        TextView hint = new TextView(this);
+        hint.setText(label);
+        hint.setTextColor(Color.WHITE);
+        hint.setTextSize(14);
+        hint.setGravity(Gravity.CENTER);
+        hint.setIncludeFontPadding(false);
+        hint.setBackgroundColor(Color.argb(190, 15, 23, 42));
+        hint.setContentDescription(description);
+        return hint;
+    }
+
+    private void updateScrollHints(HorizontalScrollView scrollView, View leftHint, View rightHint) {
+        View content = scrollView.getChildAt(0);
+        if (content == null) {
+            leftHint.setVisibility(View.GONE);
+            rightHint.setVisibility(View.GONE);
+            return;
+        }
+
+        int maxScroll = Math.max(0, content.getWidth() - scrollView.getWidth());
+        int scrollX = scrollView.getScrollX();
+        leftHint.setVisibility(scrollX > 0 ? View.VISIBLE : View.GONE);
+        rightHint.setVisibility(scrollX < maxScroll ? View.VISIBLE : View.GONE);
     }
 
     private Button makeModifierButton(String label, String modifierName) {
