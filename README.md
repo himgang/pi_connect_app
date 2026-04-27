@@ -10,6 +10,7 @@ Android wrapper for Raspberry Pi Connect, focused on making `connect.raspberrypi
 - Bottom controls for back, forward, home, reload, Android keyboard, remote key bar, and fullscreen.
 - Browser fallback, clipboard paste, offline-aware retry, and web session reset controls.
 - Remote key bar for Escape, Tab, sticky/locked modifiers, terminal shortcuts, arrows, paging, and Enter.
+- Compact icon-style controls with long-press help for full key/action descriptions.
 - GitHub Actions debug APK build, so the Raspberry Pi does not need Android Studio or the Android SDK.
 
 ## Build
