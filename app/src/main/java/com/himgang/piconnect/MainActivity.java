@@ -652,16 +652,20 @@ public class MainActivity extends Activity {
 
     private void updateModifierButtons() {
         if (ctrlButton != null) {
-            ctrlButton.setSelected(ctrlDown || ctrlLocked);
+            ctrlButton.setActivated(ctrlDown);
+            ctrlButton.setSelected(ctrlLocked);
         }
         if (altButton != null) {
-            altButton.setSelected(altDown || altLocked);
+            altButton.setActivated(altDown);
+            altButton.setSelected(altLocked);
         }
         if (shiftButton != null) {
-            shiftButton.setSelected(shiftDown || shiftLocked);
+            shiftButton.setActivated(shiftDown);
+            shiftButton.setSelected(shiftLocked);
         }
         if (metaButton != null) {
-            metaButton.setSelected(metaDown || metaLocked);
+            metaButton.setActivated(metaDown);
+            metaButton.setSelected(metaLocked);
         }
     }
 
