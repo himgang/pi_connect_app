@@ -61,6 +61,7 @@ public class MainActivity extends Activity {
     private TextView errorTitle;
     private TextView errorDetail;
     private HorizontalScrollView keyBarContainer;
+    private Button keysButton;
     private Button ctrlButton;
     private Button altButton;
     private Button shiftButton;
@@ -168,26 +169,26 @@ public class MainActivity extends Activity {
         toolbarContainer.addView(buildToolbar());
 
         FrameLayout.LayoutParams toolbarParams = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
         );
-        toolbarParams.setMargins(dp(8), dp(8), dp(8), dp(8));
+        toolbarParams.setMargins(dp(6), dp(6), dp(6), dp(6));
         root.addView(toolbarContainer, toolbarParams);
 
         keyBarContainer = new HorizontalScrollView(this);
         keyBarContainer.setHorizontalScrollBarEnabled(false);
         keyBarContainer.setFillViewport(false);
-        keyBarContainer.setVisibility(View.GONE);
+        keyBarContainer.setVisibility(View.VISIBLE);
         keyBarContainer.setBackgroundResource(R.drawable.panel_bg);
         keyBarContainer.addView(buildKeyBar());
 
         FrameLayout.LayoutParams keyParams = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
         );
-        keyParams.setMargins(dp(8), dp(8), dp(8), dp(62));
+        keyParams.setMargins(dp(6), dp(6), dp(6), dp(48));
         root.addView(keyBarContainer, keyParams);
 
         return root;
@@ -270,7 +271,7 @@ public class MainActivity extends Activity {
         toolbar.setOrientation(LinearLayout.HORIZONTAL);
         toolbar.setGravity(Gravity.CENTER_VERTICAL);
 
-        Button back = makeButton("Back", "Go back");
+        Button back = makeButton("‹", "Go back");
         back.setOnClickListener(view -> {
             if (webView.canGoBack()) {
                 webView.goBack();
@@ -278,7 +279,7 @@ public class MainActivity extends Activity {
         });
         toolbar.addView(back, buttonParams());
 
-        Button forward = makeButton("Next", "Go forward");
+        Button forward = makeButton("›", "Go forward");
         forward.setOnClickListener(view -> {
             if (webView.canGoForward()) {
                 webView.goForward();
@@ -286,15 +287,20 @@ public class MainActivity extends Activity {
         });
         toolbar.addView(forward, buttonParams());
 
-        Button home = makeButton("Home", "Open Raspberry Pi Connect");
+        Button home = makeButton("⌂", "Open Raspberry Pi Connect");
         home.setOnClickListener(view -> loadHome());
         toolbar.addView(home, buttonParams());
 
-        Button reload = makeButton("Reload", "Reload page");
+        Button reload = makeButton("↻", "Reload page");
         reload.setOnClickListener(view -> reloadPage());
         toolbar.addView(reload, buttonParams());
 
-        Button keyboard = makeButton("Keyboard", "Show Android keyboard");
+        keysButton = makeButton("Keys", "Show remote key bar");
+        keysButton.setSelected(true);
+        keysButton.setOnClickListener(view -> toggleKeyBar());
+        toolbar.addView(keysButton, buttonParams());
+
+        Button keyboard = makeButton("⌨", "Show Android keyboard");
         keyboard.setOnClickListener(view -> showKeyboard());
         toolbar.addView(keyboard, buttonParams());
 
@@ -302,15 +308,7 @@ public class MainActivity extends Activity {
         paste.setOnClickListener(view -> pasteClipboardText());
         toolbar.addView(paste, buttonParams());
 
-        Button keys = makeButton("Keys", "Show remote key bar");
-        keys.setOnClickListener(view -> {
-            boolean show = keyBarContainer.getVisibility() != View.VISIBLE;
-            keyBarContainer.setVisibility(show ? View.VISIBLE : View.GONE);
-            keys.setSelected(show);
-        });
-        toolbar.addView(keys, buttonParams());
-
-        Button fullscreen = makeButton("Full", "Toggle fullscreen");
+        Button fullscreen = makeButton("⛶", "Toggle fullscreen");
         fullscreen.setSelected(immersive);
         fullscreen.setOnClickListener(view -> {
             immersive = !immersive;
@@ -319,7 +317,7 @@ public class MainActivity extends Activity {
         });
         toolbar.addView(fullscreen, buttonParams());
 
-        Button browser = makeButton("Browser", "Open current page in browser");
+        Button browser = makeButton("Web", "Open current page in browser");
         browser.setOnClickListener(view -> openCurrentPageExternal());
         toolbar.addView(browser, buttonParams());
 
@@ -328,6 +326,14 @@ public class MainActivity extends Activity {
         toolbar.addView(reset, buttonParams());
 
         return toolbar;
+    }
+
+    private void toggleKeyBar() {
+        boolean show = keyBarContainer.getVisibility() != View.VISIBLE;
+        keyBarContainer.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (keysButton != null) {
+            keysButton.setSelected(show);
+        }
     }
 
     private LinearLayout buildKeyBar() {
@@ -343,6 +349,30 @@ public class MainActivity extends Activity {
         tab.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_TAB));
         keyBar.addView(tab, buttonParams());
 
+        Button history = makeButton("Search", "Search command history");
+        history.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_R, KeyEvent.META_CTRL_ON));
+        keyBar.addView(history, buttonParams());
+
+        Button up = makeButton("↑", "Send up arrow");
+        up.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_UP));
+        keyBar.addView(up, buttonParams());
+
+        Button down = makeButton("↓", "Send down arrow");
+        down.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_DOWN));
+        keyBar.addView(down, buttonParams());
+
+        Button left = makeButton("←", "Send left arrow");
+        left.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_LEFT));
+        keyBar.addView(left, buttonParams());
+
+        Button right = makeButton("→", "Send right arrow");
+        right.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_RIGHT));
+        keyBar.addView(right, buttonParams());
+
+        Button enter = makeButton("↵", "Send enter");
+        enter.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_ENTER));
+        keyBar.addView(enter, buttonParams());
+
         ctrlButton = makeModifierButton("Ctrl", "Control");
         keyBar.addView(ctrlButton, buttonParams());
 
@@ -355,10 +385,6 @@ public class MainActivity extends Activity {
         metaButton = makeModifierButton("Cmd", "System");
         keyBar.addView(metaButton, buttonParams());
 
-        Button history = makeButton("Search", "Search command history");
-        history.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_R, KeyEvent.META_CTRL_ON));
-        keyBar.addView(history, buttonParams());
-
         Button cancel = makeButton("Break", "Send control C");
         cancel.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_C, KeyEvent.META_CTRL_ON));
         keyBar.addView(cancel, buttonParams());
@@ -370,26 +396,6 @@ public class MainActivity extends Activity {
         Button clear = makeButton("Clear", "Send control L");
         clear.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_L, KeyEvent.META_CTRL_ON));
         keyBar.addView(clear, buttonParams());
-
-        Button up = makeButton("Up", "Send up arrow");
-        up.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_UP));
-        keyBar.addView(up, buttonParams());
-
-        Button down = makeButton("Down", "Send down arrow");
-        down.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_DOWN));
-        keyBar.addView(down, buttonParams());
-
-        Button left = makeButton("Left", "Send left arrow");
-        left.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_LEFT));
-        keyBar.addView(left, buttonParams());
-
-        Button right = makeButton("Right", "Send right arrow");
-        right.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_DPAD_RIGHT));
-        keyBar.addView(right, buttonParams());
-
-        Button enter = makeButton("Enter", "Send enter");
-        enter.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_ENTER));
-        keyBar.addView(enter, buttonParams());
 
         Button home = makeButton("Home", "Send home");
         home.setOnClickListener(view -> sendKey(KeyEvent.KEYCODE_MOVE_HOME));
@@ -427,24 +433,33 @@ public class MainActivity extends Activity {
     private Button makeButton(String label, String description) {
         Button button = new Button(this);
         button.setText(label);
-        button.setTextSize(12);
+        button.setTextSize(label.length() == 1 ? 16 : 10);
         button.setTextColor(Color.WHITE);
         button.setAllCaps(false);
         button.setMinWidth(0);
         button.setMinHeight(0);
-        button.setPadding(dp(10), 0, dp(10), 0);
+        button.setMinimumWidth(0);
+        button.setMinimumHeight(0);
+        button.setMinEms(0);
+        button.setSingleLine(true);
+        button.setIncludeFontPadding(false);
+        button.setPadding(dp(4), 0, dp(4), 0);
         button.setGravity(Gravity.CENTER);
         button.setContentDescription(description);
         button.setBackgroundResource(R.drawable.button_bg);
+        button.setOnLongClickListener(view -> {
+            Toast.makeText(this, description, Toast.LENGTH_SHORT).show();
+            return true;
+        });
         return button;
     }
 
     private LinearLayout.LayoutParams buttonParams() {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                dp(42)
+                dp(54),
+                dp(32)
         );
-        params.setMargins(dp(3), 0, dp(3), 0);
+        params.setMargins(dp(1), 0, dp(1), 0);
         return params;
     }
 
@@ -610,8 +625,8 @@ public class MainActivity extends Activity {
             metaLocked = !metaLocked;
             metaDown = false;
         }
-        Toast.makeText(this, modifierName + (isModifierLocked(button) ? " locked" : " unlocked"),
-                Toast.LENGTH_SHORT).show();
+        String state = isModifierLocked(button) ? " locked for all keys" : " unlocked";
+        Toast.makeText(this, modifierName + state, Toast.LENGTH_SHORT).show();
     }
 
     private boolean isModifierLocked(Button button) {
@@ -637,16 +652,20 @@ public class MainActivity extends Activity {
 
     private void updateModifierButtons() {
         if (ctrlButton != null) {
-            ctrlButton.setSelected(ctrlDown || ctrlLocked);
+            ctrlButton.setActivated(ctrlDown);
+            ctrlButton.setSelected(ctrlLocked);
         }
         if (altButton != null) {
-            altButton.setSelected(altDown || altLocked);
+            altButton.setActivated(altDown);
+            altButton.setSelected(altLocked);
         }
         if (shiftButton != null) {
-            shiftButton.setSelected(shiftDown || shiftLocked);
+            shiftButton.setActivated(shiftDown);
+            shiftButton.setSelected(shiftLocked);
         }
         if (metaButton != null) {
-            metaButton.setSelected(metaDown || metaLocked);
+            metaButton.setActivated(metaDown);
+            metaButton.setSelected(metaLocked);
         }
     }
 
