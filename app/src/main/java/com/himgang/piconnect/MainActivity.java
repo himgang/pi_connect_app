@@ -56,6 +56,8 @@ public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST_MEDIA = 42;
 
     private WebView webView;
+    private FrameLayout webViewContainer;
+    private final List<WebView> webViewStack = new ArrayList<>();
     private ProgressBar progressBar;
     private LinearLayout errorPanel;
     private TextView errorTitle;
@@ -85,7 +87,7 @@ public class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         buildLayout();
-        configureWebView();
+        configureWebView(webView);
         setContentView(buildRoot());
 
         if (savedInstanceState == null) {
@@ -118,6 +120,10 @@ public class MainActivity extends Activity {
             webView.goBack();
             return;
         }
+        if (webViewStack.size() > 1) {
+            closeWebViewWindow(webView);
+            return;
+        }
         super.onBackPressed();
     }
 
@@ -145,7 +151,13 @@ public class MainActivity extends Activity {
     private FrameLayout buildRoot() {
         FrameLayout root = new FrameLayout(this);
 
-        root.addView(webView, new FrameLayout.LayoutParams(
+        webViewContainer = new FrameLayout(this);
+        webViewContainer.addView(webView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        webViewStack.add(webView);
+        root.addView(webViewContainer, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
@@ -224,16 +236,16 @@ public class MainActivity extends Activity {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private void configureWebView() {
+    private void configureWebView(WebView targetWebView) {
         if (BuildConfig.DEBUG) {
             WebView.setWebContentsDebuggingEnabled(true);
         }
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
-        cookieManager.setAcceptThirdPartyCookies(webView, true);
+        cookieManager.setAcceptThirdPartyCookies(targetWebView, true);
 
-        WebSettings settings = webView.getSettings();
+        WebSettings settings = targetWebView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
@@ -251,9 +263,38 @@ public class MainActivity extends Activity {
         String userAgent = settings.getUserAgentString();
         settings.setUserAgentString(userAgent + " PiConnectAndroid/0.1");
 
-        webView.setWebViewClient(new PiConnectWebViewClient());
-        webView.setWebChromeClient(new PiConnectChromeClient());
-        webView.setDownloadListener(downloadListener);
+        targetWebView.setWebViewClient(new PiConnectWebViewClient());
+        targetWebView.setWebChromeClient(new PiConnectChromeClient());
+        targetWebView.setDownloadListener(downloadListener);
+    }
+
+    private void showWebViewWindow(WebView newWebView) {
+        webView.setVisibility(View.GONE);
+        webViewContainer.addView(newWebView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        webViewStack.add(newWebView);
+        webView = newWebView;
+        webView.requestFocus();
+    }
+
+    private void closeWebViewWindow(WebView closingWebView) {
+        int index = webViewStack.indexOf(closingWebView);
+        if (index <= 0) {
+            return;
+        }
+
+        boolean wasVisible = closingWebView == webView;
+        webViewStack.remove(index);
+        webViewContainer.removeView(closingWebView);
+        closingWebView.destroy();
+
+        if (wasVisible) {
+            webView = webViewStack.get(webViewStack.size() - 1);
+            webView.setVisibility(View.VISIBLE);
+            webView.requestFocus();
+        }
     }
 
     private LinearLayout buildToolbar() {
@@ -921,22 +962,19 @@ public class MainActivity extends Activity {
         @Override
         public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
             WebView popup = new WebView(MainActivity.this);
-            popup.setWebViewClient(new WebViewClient() {
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView popupView, WebResourceRequest request) {
-                    webView.loadUrl(request.getUrl().toString());
-                    return true;
-                }
-
-                @Override
-                public void onPageStarted(WebView popupView, String url, android.graphics.Bitmap favicon) {
-                    webView.loadUrl(url);
-                }
-            });
+            popup.setFocusable(true);
+            popup.setFocusableInTouchMode(true);
+            configureWebView(popup);
+            showWebViewWindow(popup);
             WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
             transport.setWebView(popup);
             resultMsg.sendToTarget();
             return true;
+        }
+
+        @Override
+        public void onCloseWindow(WebView window) {
+            closeWebViewWindow(window);
         }
     }
 }
